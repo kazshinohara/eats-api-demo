@@ -68,11 +68,6 @@ Set your Subscription id
 export SUB_ID={{SUB_ID}}
 ```
 
-Set your Artifact Registry repo name
-```shell
-export REPO_NAME={{REPO_NAME}}
-```
-
 Enable Google Cloud APIs
 ```shell
 gcloud services enable \
@@ -95,10 +90,14 @@ Create a Service Account and give necessary roles to it.
 gcloud iam service-accounts create ${SA_NAME}
 ```
 ```shell
-gcloud projects add-iam-policy-binding --member "serviceAccount:${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" --role "roles/pubsub.publisher"
+gcloud projects add-iam-policy-binding ${PROJECT_ID} --member "serviceAccount:${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" --role "roles/pubsub.publisher"
 ```
 ```shell
-gcloud projects add-iam-policy-binding --member "serviceAccount:${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" --role "roles/pubsub.subscriber"
+gcloud projects add-iam-policy-binding ${PROJECT_ID} --member "serviceAccount:${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" --role "roles/pubsub.subscriber"
+```
+dd
+```shell
+gcloud projects add-iam-policy-binding ${PROJECT_ID} --member "serviceAccount:${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" --role "roles/cloudsql.client"
 ```
 
 ### 2. Create a Cloud SQL instance
@@ -145,10 +144,10 @@ export DB_USER=root
 export DB_PWD={{DB_PASSWORD}}
 ```
 ```shell
-export DB_INSTANCE=$(gcloud sql instances describe handson-db --format json | jq -r .connectionName)
+export DB_INSTANCE=$(gcloud sql instances describe ${DB_INSTANCE_NAME} --format json | jq -r .connectionName)
 ```
 ```bash
-export DB_CONNECTION="/cloudsql/"$(gcloud sql instances describe handson-db --format json | jq -r .connectionName)
+export DB_CONNECTION="/cloudsql/"$(gcloud sql instances describe ${DB_INSTANCE_NAME} --format json | jq -r .connectionName)
 ```
 
 ### 3. Create Cloud Pub/Sub's schema, topic and subscription.
@@ -259,7 +258,7 @@ export NOTIFICATION_DOMAIN=$(gcloud run services describe notification-server --
 ### 6. Check behavior
 Confirm if Eats service is alive.
 ```bash
-curl -X GET ${EATS_URL}/
+curl -X GET ${EATS_URL}/ | jq
 ```
 
 ```terminal
@@ -268,7 +267,7 @@ curl -X GET ${EATS_URL}/
 
 Get items list, these items were automatically created in the db when eats service starts up.
 ```bash
-curl -X GET ${EATS_URL}/items
+curl -X GET ${EATS_URL}/items | jq
 ```
 
 ```terminal
@@ -304,7 +303,7 @@ curl -X GET ${EATS_URL}/items
 ```
 Create an order.
 ```shell
-curl -X POST -d '{"purchaser":"Taro Yamada","item_id":1}' ${EATS_URL}/orders
+curl -X POST -d '{"purchaser":"Taro Yamada","item_id":1}' ${EATS_URL}/orders | jq
 ```
 
 ```terminal
@@ -322,7 +321,7 @@ curl -X POST -d '{"purchaser":"Taro Yamada","item_id":1}' ${EATS_URL}/orders
 
 Get orders list, you could see what you created in the earlier step.
 ```bash
-curl -X GET ${EATS_URL}/orders
+curl -X GET ${EATS_URL}/orders | jq
 ```
 
 ```terminal
@@ -340,7 +339,7 @@ curl -X GET ${EATS_URL}/orders
 
 Update your order changing item_completed flag to true.
 ```bash
-curl -X PUT -d '{"purchaser":"Taro Yamada","item_id":1,"item_completed":true}' ${EATS_URL}/orders/1
+curl -X PUT -d '{"purchaser":"Taro Yamada","item_id":1,"item_completed":true}' ${EATS_URL}/orders/1 | jq
 ```
 
 ```terminal
@@ -359,7 +358,7 @@ curl -X PUT -d '{"purchaser":"Taro Yamada","item_id":1,"item_completed":true}' $
 
 Delete your order.
 ```bash
-curl -X DELETE ${EATS_URL}/orders/1
+curl -X DELETE ${EATS_URL}/orders/1 | jq
 ```
 ```terminal
 {"id":"1","message":"deleted"}
@@ -372,7 +371,7 @@ docker run --name notification-client -e INSECURE=false -e DOMAIN=${NOTIFICATION
 
 Create orders, recommend you to try creating 5 ~ 6 orders to get the notification quickly.
 ```bash
-curl -X POST -d '{"purchaser":"Taro Yamada","item_id":1}' ${EATS_URL}/orders
+curl -X POST -d '{"purchaser":"Taro Yamada","item_id":1}' ${EATS_URL}/orders | jq
 ```
 
 In your Notification client, you could see the following messages from Notification server.
@@ -385,7 +384,7 @@ In your Notification client, you could see the following messages from Notificat
 
 Let's try Updating your order and confirm if the notification comes.
 ```bash
-curl -X PUT -d '{"purchaser":"Taro Yamada","item_id":1,"item_completed":true}' ${EATS_URL}/orders/2
+curl -X PUT -d '{"purchaser":"Taro Yamada","item_id":1,"item_completed":true}' ${EATS_URL}/orders/2 | jq
 ```
 
 In your Notification client.
